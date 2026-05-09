@@ -21,14 +21,38 @@ function plp_get_properties($request) {
 
     $meta_query = [];
 
-     // Filter: Price
+    // Filter: Price
     if (!empty($price)) {
+
+    // 50000 Above
+    if ($price === '50000-plus') {
+
         $meta_query[] = [
             'key'     => 'price',
-            'value'   => $price,
-            'compare' => '='
+            'value'   => 50000,
+            'compare' => '>=',
+            'type'    => 'NUMERIC'
         ];
+
+    } else {
+
+        // Example: 40000-50000
+        $price_range = explode('-', $price);
+
+        if (count($price_range) === 2) {
+
+            $min_price = (int) $price_range[0];
+            $max_price = (int) $price_range[1];
+
+            $meta_query[] = [
+                'key'     => 'price',
+                'value'   => [$min_price, $max_price],
+                'compare' => 'BETWEEN',
+                'type'    => 'NUMERIC'
+            ];
+        }
     }
+}
 
      // Filter: Bedrooms
     if (!empty($bedrooms)) {
@@ -48,9 +72,6 @@ function plp_get_properties($request) {
         ];
     }
 
-    $price = isset($_GET['price']) ? $_GET['price'] : '';
-
-
     //Query Args
     $args = [
         'post_type'      => 'property',
@@ -58,17 +79,6 @@ function plp_get_properties($request) {
         'meta_query'     => $meta_query,
     ];
 
-    if ($price) {
-
-    $args['meta_query'] = array(
-        array(
-            'key' => 'price',
-            'value' => $price,
-            'compare' => '<=',
-            'type' => 'NUMERIC'
-        )
-    );
-}
 
     $query = new WP_Query($args);
 
