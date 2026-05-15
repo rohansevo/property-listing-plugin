@@ -14,7 +14,6 @@ add_theme_support('post-thumbnails');
 require_once plugin_dir_path(__FILE__) . 'includes/post-types.php';
 require_once plugin_dir_path(__FILE__) . 'includes/cmb2/init.php';  
 require_once plugin_dir_path(__FILE__) . 'includes/property-fields.php';
-require_once plugin_dir_path(__FILE__) . 'includes/frontend.php';
 require_once plugin_dir_path(__FILE__) . 'includes/api.php';
 require_once plugin_dir_path(__FILE__) . 'includes/shortcodes.php';
 
@@ -50,6 +49,9 @@ function plp_enqueue_react_app() {
         time(),
         true
     );
+    wp_localize_script('plp-react-script', 'plpVars', array(
+        'assetsUrl' => plugin_dir_url(__FILE__) . 'assets/',
+    ));
 }
 
 add_action('wp_enqueue_scripts', 'plp_enqueue_react_app');
