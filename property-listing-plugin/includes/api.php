@@ -102,3 +102,120 @@ function plp_get_properties($request) {
 
     return $data;
 }
+
+
+
+
+
+
+function property_featured_api() {
+
+    register_rest_route('properties', '/featured-properties', [
+
+        'methods' => 'GET',
+
+        'callback' => function () {
+
+            $query = new WP_Query([
+                'post_type' => 'property',
+                'posts_per_page' => 6,
+                'meta_query' => [
+                    [
+                        'key' => 'featured_property',
+                        'value' => 1,
+                    ]
+                ]
+            ]);
+
+            $properties = [];
+
+            while ($query->have_posts()) {
+
+                $query->the_post();
+
+                $properties[] = [
+                    'id' => get_the_ID(),
+                    'title' => get_the_title(),
+                    'image' => get_the_post_thumbnail_url(get_the_ID(), 'large'),
+                    'link' => get_permalink(),
+                    'price'     => get_post_meta(get_the_ID(), 'price', true),
+                    'bedrooms'  => get_post_meta(get_the_ID(), 'bedrooms', true),
+                    'location'  => get_post_meta(get_the_ID(), 'location', true),   
+                ];
+            }
+
+            wp_reset_postdata();
+
+            return $properties;
+        }
+    ]);
+}
+
+add_action('rest_api_init', 'property_featured_api');
+
+
+
+
+
+
+
+
+
+function property_new_launch_api() {
+
+    register_rest_route('properties', '/new-launch-projects', [
+
+        'methods' => 'GET',
+
+        'callback' => function () {
+
+            $query = new WP_Query([
+
+                'post_type' => 'property',
+
+                'posts_per_page' => 6,
+
+                'post_status' => 'publish',
+
+                'orderby' => 'date',
+
+                'order' => 'DESC',
+
+                'date_query' => [
+                [
+                'after' => '5 days ago'
+                ]
+    ]
+            ]);
+
+            $projects = [];
+
+            while ($query->have_posts()) {
+
+                $query->the_post();
+
+                $projects[] = [
+
+                    'id' => get_the_ID(),
+
+                    'title' => get_the_title(),
+
+                    'image' => get_the_post_thumbnail_url(
+                        get_the_ID(),
+                        'large'
+                    ),
+
+                    'date' => get_the_date('d M Y'),
+
+                    'link' => get_permalink(),
+                ];
+            }
+
+            wp_reset_postdata();
+
+            return $projects;
+        }
+    ]);
+}
+
+add_action('rest_api_init', 'property_new_launch_api');
