@@ -13,6 +13,26 @@ function property_listing_register_post_types() {
         'supports' => array('title', 'editor', 'thumbnail'),
         'show_in_rest' => true,
     ]);
+    register_taxonomy(
+        'property_category',
+        ['property'],
+        [
+
+            'labels' => [
+                'name'          => 'Property Categories',
+                'singular_name' => 'Property Category',
+            ],
+
+            'public'       => true,
+            'hierarchical' => true, // like categories
+
+            'show_in_rest' => true,
+
+            'rewrite' => [
+                'slug' => 'property-category',
+            ],
+        ]
+    );
 }
 
 add_action('init', 'property_listing_register_post_types');
@@ -20,89 +40,58 @@ add_action('init', 'property_listing_register_post_types');
 
 
 
-/*
-|--------------------------------------------------------------------------
-| Register Featured Meta Field
-|--------------------------------------------------------------------------
-*/
 
-function property_register_featured_meta() {
-
-    register_post_meta('property', 'featured_property', [
-        'show_in_rest' => true,
-        'single' => true,
-        'type' => 'boolean',
-        'default' => false,
-    ]);
-}
-
-add_action('init', 'property_register_featured_meta');
 
 
 
 /*
 |--------------------------------------------------------------------------
-| Add Meta Box
+| Register Taxonomies
 |--------------------------------------------------------------------------
 */
 
-function property_add_featured_meta_box() {
+function property_listing_register_taxonomies() {
 
-    add_meta_box(
-        'property_featured_box',
-        'Featured Property',
-        'property_featured_meta_box_html',
-        'property',
-        'side'
+    register_taxonomy(
+        'property_tag',
+        ['property'],
+        [
+
+            'labels' => [
+                'name' => 'Property Tags',
+                'singular_name' => 'Property Tag',
+            ],
+
+            'public' => true,
+            'hierarchical' => false,
+            'show_in_rest' => true,
+        ]
     );
+
+
+
+    // Property Bedroom Taxonomy
+    register_taxonomy(
+        'property_bedroom',
+        ['property'],
+        [
+
+            'labels' => [
+                'name'          => 'Bedrooms',
+                'singular_name' => 'Bedroom',
+            ],
+
+            'public'            => true,
+            'hierarchical'      => true,
+            'show_in_rest'      => true,
+            'show_admin_column' => true,
+            'meta_box_cb'       => 'post_categories_meta_box',
+        ]
+    );
+
+
 }
 
-add_action('add_meta_boxes', 'property_add_featured_meta_box');
-
-
-
-/*
-|--------------------------------------------------------------------------
-| Meta Box HTML
-|--------------------------------------------------------------------------
-*/
-
-function property_featured_meta_box_html($post) {
-
-    $value = get_post_meta($post->ID, 'featured_property', true);
-
-    ?>
-
-    <label>
-        <input
-            type="checkbox"
-            name="featured_property"
-            value="1"
-            <?php checked($value, 1); ?>
-        />
-
-        Mark as Featured
-    </label>
-
-    <?php
-}
-
-
-
-/*
-|--------------------------------------------------------------------------
-| Save Meta Box
-|--------------------------------------------------------------------------
-*/
-
-function property_save_featured_meta($post_id) {
-
-    $featured = isset($_POST['featured_property']) ? 1 : 0;
-
-    update_post_meta($post_id, 'featured_property', $featured);
-}
-
-add_action('save_post_property', 'property_save_featured_meta');
-
+add_action('init', 'property_listing_register_taxonomies');
 
 

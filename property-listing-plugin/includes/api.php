@@ -14,57 +14,66 @@ add_action('rest_api_init', function () {
 //API Callback
 function plp_get_properties($request) {
 
-     // Get filter values from URL
+    // Get filter values
     $price     = $request->get_param('price');
     $bedrooms  = $request->get_param('bedrooms');
     $location  = $request->get_param('location');
+    $tab = $request->get_param('tab');
 
     $meta_query = [];
+    $tax_query  = [];
 
-    // Filter: Price
+    // Property Category Filter
+    if (!empty($tab)) {
+
+    $tax_query[] = [
+        'taxonomy' => 'property_category',
+        'field'    => 'name',
+        'terms'    => $tab,
+    ];
+    }
+
+    // Price Filter
     if (!empty($price)) {
 
-    // 50000 Above
-    if ($price === '50000-plus') {
-
-        $meta_query[] = [
-            'key'     => 'price',
-            'value'   => 50000,
-            'compare' => '>=',
-            'type'    => 'NUMERIC'
-        ];
-
-    } else {
-
-        // Example: 40000-50000
-        $price_range = explode('-', $price);
-
-        if (count($price_range) === 2) {
-
-            $min_price = (int) $price_range[0];
-            $max_price = (int) $price_range[1];
+        if ($price === '50000-plus') {
 
             $meta_query[] = [
                 'key'     => 'price',
-                'value'   => [$min_price, $max_price],
-                'compare' => 'BETWEEN',
+                'value'   => 50000,
+                'compare' => '>=',
                 'type'    => 'NUMERIC'
             ];
+
+        } else {
+
+            $price_range = explode('-', $price);
+
+            if (count($price_range) === 2) {
+
+                $meta_query[] = [
+                    'key'     => 'price',
+                    'value'   => [(int)$price_range[0], (int)$price_range[1]],
+                    'compare' => 'BETWEEN',
+                    'type'    => 'NUMERIC'
+                ];
+            }
         }
     }
-}
 
-     // Filter: Bedrooms
+    // Bedrooms Filter (FIXED)
     if (!empty($bedrooms)) {
-        $meta_query[] = [
-            'key'     => 'bedrooms',
-            'value'   => $bedrooms,
-            'compare' => '='
+
+        $tax_query[] = [
+            'taxonomy' => 'property_bedroom',
+            'field'    => 'name',
+            'terms'    => $bedrooms,
         ];
     }
 
-    // Filter: Location (partial match)
+    // Location Filter
     if (!empty($location)) {
+
         $meta_query[] = [
             'key'     => 'location',
             'value'   => $location,
@@ -72,37 +81,46 @@ function plp_get_properties($request) {
         ];
     }
 
-    //Query Args
+    // Query Args
     $args = [
         'post_type'      => 'property',
         'posts_per_page' => -1,
         'meta_query'     => $meta_query,
+        'tax_query'      => $tax_query,
     ];
-
 
     $query = new WP_Query($args);
 
     $data = [];
 
     if ($query->have_posts()) {
+
         while ($query->have_posts()) {
+
             $query->the_post();
 
             $data[] = [
                 'id'        => get_the_ID(),
                 'title'     => get_the_title(),
                 'price'     => get_post_meta(get_the_ID(), 'price', true),
-                'image' => get_the_post_thumbnail_url(get_the_ID(), 'full'),
-                'bedrooms'  => get_post_meta(get_the_ID(), 'bedrooms', true),
-                'location'  => get_post_meta(get_the_ID(), 'location', true),   
+                'image'     => get_the_post_thumbnail_url(get_the_ID(), 'full'),
+
+                // FIXED
+                'bedrooms'  => wp_get_post_terms(
+                    get_the_ID(),
+                    'property_bedroom',
+                    ['fields' => 'names']
+                ),
+
+                'location'  => get_post_meta(get_the_ID(), 'location', true),
             ];
         }
+
         wp_reset_postdata();
     }
 
     return $data;
 }
-
 
 
 
@@ -122,7 +140,8 @@ function property_featured_api() {
                 'meta_query' => [
                     [
                         'key' => 'featured_property',
-                        'value' => 1,
+                        'value'   => 'on',
+                        'compare' => '='
                     ]
                 ]
             ]);
@@ -139,7 +158,7 @@ function property_featured_api() {
                     'image' => get_the_post_thumbnail_url(get_the_ID(), 'large'),
                     'link' => get_permalink(),
                     'price'     => get_post_meta(get_the_ID(), 'price', true),
-                    'bedrooms'  => get_post_meta(get_the_ID(), 'bedrooms', true),
+                    'bedrooms' => wp_get_post_terms(get_the_ID(),'property_bedroom',['fields' => 'names']),
                     'location'  => get_post_meta(get_the_ID(), 'location', true),   
                 ];
             }
